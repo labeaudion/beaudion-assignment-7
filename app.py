@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, url_for, session
 import numpy as np
 import matplotlib
+import scipy.stats as stats
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
+
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"  # Replace with your own secret key, needed for session management
@@ -184,14 +186,31 @@ def hypothesis_test():
         hypothesized_value = beta0
 
     # TODO 10: Calculate p-value based on test type
-    p_value = None
+    if test_type == '<':
+        p_value = sum(simulated_stats >= observed_stat) / S # (number of simulated stats ≥ observed stat) / S
+    elif test_type == '>':
+        p_value = sum(simulated_stats <= observed_stat) / S # (number of simulated stats ≤ observed stat) / S
+    else:
+        p_value = sum(abs(simulated_stats) >= abs(observed_stat)) / S # (number of simulated stats as extreme as observed stat) / S
+        
 
     # TODO 11: If p_value is very small (e.g., <= 0.0001), set fun_message to a fun message
-    fun_message = None
+    if p_value <= 0.0001:
+        fun_message = "You've encountered a rare event! The p-value is very small."
 
     # TODO 12: Plot histogram of simulated statistics
     plot3_path = "static/plot3.png"
     # Replace with code to generate and save the plot
+    plt.figure(figsize=(10, 5))
+    plt.hist(simulated_stats, bins=20, alpha=0.5, color="lightgreen", label="Simulated Statistics")
+    plt.axvline(observed_stat, color="green", linestyle="--", linewidth=1, label=f"Observed {parameter}: {observed_stat:.4f}")
+    plt.axvline(hypothesized_value, color="darkgreen", linestyle="-", linewidth=1, label=f"Hypothesized {parameter} (H_0): {hypothesized_value:.2f}")
+    plt.title(f"Hypothesis Test for {parameter}")
+    plt.xlabel(f"{parameter}")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.savefig(plot3_path)
+    plt.close()
 
     # Return results to template
     return render_template(
@@ -207,8 +226,8 @@ def hypothesis_test():
         beta1=beta1,
         S=S,
         # TODO 13: Uncomment the following lines when implemented
-        # p_value=p_value,
-        # fun_message=fun_message,
+        p_value=p_value,
+        fun_message=fun_message,
     )
 
 @app.route("/confidence_interval", methods=["POST"])
@@ -241,16 +260,19 @@ def confidence_interval():
         true_param = beta0
 
     # TODO 14: Calculate mean and standard deviation of the estimates
-    mean_estimate = None
-    std_estimate = None
+    mean_estimate = np.mean(estimates)
+    std_estimate = np.std(estimates, ddof=1)
 
     # TODO 15: Calculate confidence interval for the parameter estimate
     # Use the t-distribution and confidence_level
-    ci_lower = None
-    ci_upper = None
+    alpha = 1 - confidence_level
+    t_score = stats.t.ppf(1 - alpha/2, len(estimates)-1)
+    error = t_score * (std_estimate / np.sqrt(len(estimates)))
+    ci_lower = mean_estimate - error
+    ci_upper = mean_estimate + error
 
     # TODO 16: Check if confidence interval includes true parameter
-    includes_true = None
+    includes_true = True if ci_lower <= true_param <= ci_upper else False
 
     # TODO 17: Plot the individual estimates as gray points and confidence interval
     # Plot the mean estimate as a colored point which changes if the true parameter is included
@@ -258,6 +280,23 @@ def confidence_interval():
     # Plot the true parameter value
     plot4_path = "static/plot4.png"
     # Write code here to generate and save the plot
+    plt.figure(figsize=(10, 5))
+    plt.scatter(estimates, np.zeros_like(estimates), alpha=0.5, color="gray", label="Simulated Estimates")
+
+    if includes_true == True:
+        color = 'darkgreen'
+    else:
+        color = 'lightpink'
+
+    plt.scatter(mean_estimate, 0, s=100, zorder=5, color=color, label='Mean Estimate')
+    plt.errorbar(mean_estimate, 1, xerr=[[mean_estimate - ci_lower], [ci_upper - mean_estimate]], color='deeppink', label=f'{confidence_level * 100}% Confidence Interval')
+    plt.axvline(true_param, color="darkgreen", linestyle="-", linewidth=1, label=f"True {parameter}")
+    plt.title(f"Hypothesis Test for {parameter}")
+    plt.xlabel(f"{parameter}")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.savefig(plot4_path)
+    plt.close()
 
     # Return results to template
     return render_template(
