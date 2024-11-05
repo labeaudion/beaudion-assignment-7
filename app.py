@@ -14,21 +14,32 @@ def generate_data(N, mu, beta0, beta1, sigma2, S):
     # Generate data and initial plots
 
     # TODO 1: Generate a random dataset X of size N with values between 0 and 1
-    X = None  # Replace with code to generate random values for X
+    X = np.random.rand(N)  # Replace with code to generate random values for X
 
     # TODO 2: Generate a random dataset Y using the specified beta0, beta1, mu, and sigma2
     # Y = beta0 + beta1 * X + mu + error term
-    Y = None  # Replace with code to generate Y
+    Y = beta0 + beta1 * X + mu + np.random.normal(0, np.sqrt(sigma2), N) # Replace with code to generate Y
 
     # TODO 3: Fit a linear regression model to X and Y
-    model = None  # Initialize the LinearRegression model
-    # None  # Fit the model to X and Y
-    slope = None  # Extract the slope (coefficient) from the fitted model
-    intercept = None  # Extract the intercept from the fitted model
+    model = LinearRegression()  # Initialize the LinearRegression model
+    model.fit(X.reshape(-1, 1), Y)   # Fit the model to X and Y
+    slope = model.coef_[0]  # Extract the slope (coefficient) from the fitted model
+    intercept = model.intercept_  # Extract the intercept from the fitted model
 
     # TODO 4: Generate a scatter plot of (X, Y) with the fitted regression line
     plot1_path = "static/plot1.png"
     # Replace with code to generate and save the scatter plot
+    plt.scatter(X, Y, label='Data Points', color='blue')
+
+    Y_pred = model.predict(X.reshape(-1, 1))
+    plt.plot(X, Y_pred, color='purple', linewidth=2, label='Fitted Line')
+
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.title(f'Linear fit: y = {intercept:.2f} + {slope:.2f}x')
+    plt.legend()
+    plt.savefig(plot1_path)
+    plt.close()
 
     # TODO 5: Run S simulations to generate slopes and intercepts
     slopes = []
@@ -36,13 +47,14 @@ def generate_data(N, mu, beta0, beta1, sigma2, S):
 
     for _ in range(S):
         # TODO 6: Generate simulated datasets using the same beta0 and beta1
-        X_sim = None  # Replace with code to generate simulated X values
-        Y_sim = None  # Replace with code to generate simulated Y values
+        X_sim = np.random.rand(N)  # Replace with code to generate simulated X values
+        Y_sim = beta0 + beta1 * X + mu + np.random.normal(0, np.sqrt(sigma2), N)  # Replace with code to generate simulated Y values
 
         # TODO 7: Fit linear regression to simulated data and store slope and intercept
-        sim_model = None  # Replace with code to fit the model
-        sim_slope = None  # Extract slope from sim_model
-        sim_intercept = None  # Extract intercept from sim_model
+        sim_model = LinearRegression  # Replace with code to fit the model
+        sim_model.fit(X_sim.reshape(-1, 1), Y_sim)
+        sim_slope = sim_model.coef_[0]  # Extract slope from sim_model
+        sim_intercept = sim_model.intercept_  # Extract intercept from sim_model
 
         slopes.append(sim_slope)
         intercepts.append(sim_intercept)
@@ -50,11 +62,22 @@ def generate_data(N, mu, beta0, beta1, sigma2, S):
     # TODO 8: Plot histograms of slopes and intercepts
     plot2_path = "static/plot2.png"
     # Replace with code to generate and save the histogram plot
+    plt.figure(figsize=(10, 5))
+    plt.hist(slopes, bins=20, alpha=0.5, color="blue", label="Slopes")
+    plt.hist(intercepts, bins=20, alpha=0.5, color="orange", label="Intercepts")
+    plt.axvline(slope, color="blue", linestyle="--", linewidth=1, label=f"Slope: {slope:.2f}")
+    plt.axvline(intercept, color="orange", linestyle="--", linewidth=1, label=f"Intercept: {intercept:.2f}")
+    plt.title("Histogram of Slopes and Intercepts")
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.savefig(plot2_path)
+    plt.close()
 
     # TODO 9: Return data needed for further analysis, including slopes and intercepts
     # Calculate proportions of slopes and intercepts more extreme than observed
-    slope_more_extreme = None  # Replace with code to calculate proportion of slopes more extreme than observed
-    intercept_extreme = None  # Replace with code to calculate proportion of intercepts more extreme than observed
+    slope_more_extreme = sum(s > slope for s in slopes) / S  # Replace with code to calculate proportion of slopes more extreme than observed
+    intercept_extreme = sum(i < intercept for i in intercepts) / S  # Replace with code to calculate proportion of intercepts more extreme than observed
 
     # Return data needed for further analysis
     return (
