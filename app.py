@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, url_for, session
 import numpy as np
 import matplotlib
 import scipy.stats as stats
+import secrets
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key_here"  # Replace with your own secret key, needed for session management
+app.secret_key = secrets.token_hex(32)   # Replace with your own secret key, needed for session management
 
 
 def generate_data(N, mu, beta0, beta1, sigma2, S):
@@ -31,10 +32,10 @@ def generate_data(N, mu, beta0, beta1, sigma2, S):
     # TODO 4: Generate a scatter plot of (X, Y) with the fitted regression line
     plot1_path = "static/plot1.png"
     # Replace with code to generate and save the scatter plot
-    plt.scatter(X, Y, label='Data Points', color='blue')
+    plt.scatter(X, Y, label='Data Points', color='#87CEEB')
 
     Y_pred = model.predict(X.reshape(-1, 1))
-    plt.plot(X, Y_pred, color='purple', linewidth=2, label='Fitted Line')
+    plt.plot(X, Y_pred, color='#BF00FF', linewidth=2, label='Fitted Line')
 
     plt.xlabel("X")
     plt.ylabel("Y")
@@ -50,10 +51,10 @@ def generate_data(N, mu, beta0, beta1, sigma2, S):
     for _ in range(S):
         # TODO 6: Generate simulated datasets using the same beta0 and beta1
         X_sim = np.random.rand(N)  # Replace with code to generate simulated X values
-        Y_sim = beta0 + beta1 * X + mu + np.random.normal(0, np.sqrt(sigma2), N)  # Replace with code to generate simulated Y values
+        Y_sim = beta0 + beta1 * X_sim + mu + np.random.normal(0, np.sqrt(sigma2), N)  # Replace with code to generate simulated Y values
 
         # TODO 7: Fit linear regression to simulated data and store slope and intercept
-        sim_model = LinearRegression  # Replace with code to fit the model
+        sim_model = LinearRegression()  # Replace with code to fit the model
         sim_model.fit(X_sim.reshape(-1, 1), Y_sim)
         sim_slope = sim_model.coef_[0]  # Extract slope from sim_model
         sim_intercept = sim_model.intercept_  # Extract intercept from sim_model
@@ -187,14 +188,15 @@ def hypothesis_test():
 
     # TODO 10: Calculate p-value based on test type
     if test_type == '<':
-        p_value = sum(simulated_stats >= observed_stat) / S # (number of simulated stats ≥ observed stat) / S
+        p_value = sum(simulated_stats <= observed_stat) / S # (number of simulated stats ≥ observed stat) / S
     elif test_type == '>':
-        p_value = sum(simulated_stats <= observed_stat) / S # (number of simulated stats ≤ observed stat) / S
+        p_value = sum(simulated_stats >= observed_stat) / S # (number of simulated stats ≤ observed stat) / S
     else:
         p_value = sum(abs(simulated_stats) >= abs(observed_stat)) / S # (number of simulated stats as extreme as observed stat) / S
         
 
     # TODO 11: If p_value is very small (e.g., <= 0.0001), set fun_message to a fun message
+    fun_message = ''
     if p_value <= 0.0001:
         fun_message = "You've encountered a rare event! The p-value is very small."
 
@@ -203,10 +205,10 @@ def hypothesis_test():
     # Replace with code to generate and save the plot
     plt.figure(figsize=(10, 5))
     plt.hist(simulated_stats, bins=20, alpha=0.5, color="lightgreen", label="Simulated Statistics")
-    plt.axvline(observed_stat, color="green", linestyle="--", linewidth=1, label=f"Observed {parameter}: {observed_stat:.4f}")
-    plt.axvline(hypothesized_value, color="darkgreen", linestyle="-", linewidth=1, label=f"Hypothesized {parameter} (H_0): {hypothesized_value:.2f}")
-    plt.title(f"Hypothesis Test for {parameter}")
-    plt.xlabel(f"{parameter}")
+    plt.axvline(observed_stat, color="green", linestyle="--", linewidth=1, label=f"Observed {parameter.capitalize()}: {observed_stat:.4f}")
+    plt.axvline(hypothesized_value, color="darkgreen", linestyle="-", linewidth=1, label=f"Hypothesized {parameter.capitalize()} (H_0): {hypothesized_value:.2f}")
+    plt.title(f"Hypothesis Test for {parameter.capitalize()}")
+    plt.xlabel(f"{parameter.capitalize()}")
     plt.ylabel("Frequency")
     plt.legend()
     plt.savefig(plot3_path)
@@ -265,7 +267,8 @@ def confidence_interval():
 
     # TODO 15: Calculate confidence interval for the parameter estimate
     # Use the t-distribution and confidence_level
-    alpha = 1 - confidence_level
+    alpha = 100 - confidence_level
+    alpha = alpha / 100
     t_score = stats.t.ppf(1 - alpha/2, len(estimates)-1)
     error = t_score * (std_estimate / np.sqrt(len(estimates)))
     ci_lower = mean_estimate - error
@@ -281,19 +284,19 @@ def confidence_interval():
     plot4_path = "static/plot4.png"
     # Write code here to generate and save the plot
     plt.figure(figsize=(10, 5))
-    plt.scatter(estimates, np.zeros_like(estimates), alpha=0.5, color="gray", label="Simulated Estimates")
+    plt.scatter(estimates, np.zeros_like(estimates), color="gray", label="Simulated Estimates")
 
     if includes_true == True:
         color = 'darkgreen'
     else:
-        color = 'lightpink'
+        color = 'purple'
 
     plt.scatter(mean_estimate, 0, s=100, zorder=5, color=color, label='Mean Estimate')
-    plt.errorbar(mean_estimate, 1, xerr=[[mean_estimate - ci_lower], [ci_upper - mean_estimate]], color='deeppink', label=f'{confidence_level * 100}% Confidence Interval')
-    plt.axvline(true_param, color="darkgreen", linestyle="-", linewidth=1, label=f"True {parameter}")
-    plt.title(f"Hypothesis Test for {parameter}")
-    plt.xlabel(f"{parameter}")
-    plt.ylabel("Frequency")
+    plt.plot([ci_lower, ci_upper], [0, 0], color='deeppink', linewidth=6, label=f'{confidence_level}% Confidence Interval')
+    plt.axvline(true_param, color="darkgreen", linestyle="--", linewidth=2, label=f"True {parameter.capitalize()}")
+    plt.title(f"{confidence_level}% Confidence Interval for {parameter.capitalize()}")
+    plt.xlabel(f"{parameter.capitalize()}")
+    plt.yticks([])
     plt.legend()
     plt.savefig(plot4_path)
     plt.close()
@@ -321,4 +324,4 @@ def confidence_interval():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=3000)
