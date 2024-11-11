@@ -188,7 +188,7 @@ def hypothesis_test():
 
     # TODO 10: Calculate p-value based on test type
     if test_type == '<':
-        p_value = sum(simulated_stats <= observed_stat) / S # (number of simulated stats ≥ observed stat) / S
+        p_value =  sum(simulated_stats <= observed_stat) / S # (number of simulated stats ≥ observed stat) / S
     elif test_type == '>':
         p_value = sum(simulated_stats >= observed_stat) / S # (number of simulated stats ≤ observed stat) / S
     else:
@@ -206,7 +206,7 @@ def hypothesis_test():
     plt.figure(figsize=(10, 5))
     plt.hist(simulated_stats, bins=20, alpha=0.5, color="lightgreen", label="Simulated Statistics")
     plt.axvline(observed_stat, color="green", linestyle="--", linewidth=1, label=f"Observed {parameter.capitalize()}: {observed_stat:.4f}")
-    plt.axvline(hypothesized_value, color="darkgreen", linestyle="-", linewidth=1, label=f"Hypothesized {parameter.capitalize()} (H_0): {hypothesized_value:.2f}")
+    plt.axvline(hypothesized_value, color="darkgreen", linestyle="-", linewidth=1, label=fr"Hypothesized {parameter.capitalize()} ($H_0$): {hypothesized_value:.2f}")
     plt.title(f"Hypothesis Test for {parameter.capitalize()}")
     plt.xlabel(f"{parameter.capitalize()}")
     plt.ylabel("Frequency")
