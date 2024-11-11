@@ -188,11 +188,13 @@ def hypothesis_test():
 
     # TODO 10: Calculate p-value based on test type
     if test_type == '<':
-        p_value =  sum(simulated_stats <= observed_stat) / S # (number of simulated stats ≥ observed stat) / S
+        p_value = np.mean(simulated_stats <= observed_stat) # (number of simulated stats ≤ observed stat) / S
     elif test_type == '>':
-        p_value = sum(simulated_stats >= observed_stat) / S # (number of simulated stats ≤ observed stat) / S
+        p_value = np.mean(simulated_stats >= observed_stat)# (number of simulated stats ≥ observed stat) / S
     else:
-        p_value = sum(abs(simulated_stats) >= abs(observed_stat)) / S # (number of simulated stats as extreme as observed stat) / S
+        observed_diff = np.abs(observed_stat - hypothesized_value)
+        simulated_diffs = np.abs(simulated_stats - hypothesized_value)
+        p_value = np.mean(simulated_diffs >= observed_diff) # (number of simulated stats as extreme as observed stat) / S
         
 
     # TODO 11: If p_value is very small (e.g., <= 0.0001), set fun_message to a fun message
